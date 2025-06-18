@@ -1,0 +1,170 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function to determine neucleotide density.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [density] = ntuple(sequence, Window, nbin, bin)
+  %"ntuple" finds density of n-tuple neucleotide
+  %'sequence' is genetic sequence, 'window' is counting window, bin = n-tuple
+  
+  seq=sequence;
+  
+  for i=1:length(seq)-(nbin-1)
+     atg(1,i)=isequal(seq(i:i+nbin-1),bin);
+  end
+  
+  window=Window;
+  w=1/window*ones(1,window);
+  sum=zeros(1,length(atg));
+  
+  for i=1:length(w)
+     sum=sum+w(i)*[zeros(1,i-1) atg(1:(length(atg)-(i-1)))];
+  end
+  
+  len = length(atg);
+  sa=sum;
+  sa(1:window-1) = sa(1:window-1) * window./(1:window-1);
+  density=sa;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function to determine all single neucleotide density.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [totdensity] = onemerdensity(Sequence, Window, nbin)
+
+%"ntuple" finds density of n-tuple neucleotide
+%'sequence' is genetic sequence, 'window' is counting window, nbin = No of letters in bin
+
+labelcount = 0;
+n=4^nbin;
+labels = cell(1,n);
+  for first = 1:4
+     codon = int2nt([first]);
+    labelcount = labelcount + 1;
+    labels{labelcount} = codon;
+  end
+
+  for k=1:n
+    char=labels{1,k};
+   nmer=ntuple(Sequence, Window, nbin, char);
+   totdensity(k,:)=nmer;
+  end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function for Principal Component Analysis.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [coeff,score,eigenvaluescovariance,tsquared,variancepercentage] = pc(i)
+
+% "i" denotes the Sequence Name which exist in a path.
+%  The individual sequence name is given as "1", "2" .. etc.
+
+  Window=51;nbin=1;
+  string=int2str(i);
+  ch=char(39);
+  [Header Sequence]=eval(['fastaread(',ch,'C:\Users\~PATH\',string,ch,');']);
+  onedensity=onemerdensity(Sequence, Window, nbin);
+  [coeff,score,eigenvaluescovariance,tsquared,variancepercentage] = pca(onedensity);   % Principal Component 
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Use of PCA function for Cluster determination.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Window is the width of the sliding window.
+% nbin is the length of the bin.
+
+  labelcount = 0;nbin=1;         % Bin Construction
+  n=4^nbin;
+  labels = cell(1,n);
+  for first = 1:4
+      bin = int2nt([first]);
+      labelcount = labelcount + 1;
+      labels{labelcount} = bin;
+  end
+
+  categories=labels';
+
+  name=cell(1,10);
+  name{1}='Callithrix';name{2}='Equus';
+  name{3}='Gallus';name{4}='Homo';name{5}='Macaca';name{6}='Mus';
+  name{7}='Pan';name{8}='Papio';name{9}='Rattus';name{10}='Sus';
+  specis=cell(1,40);
+  count = 0;
+
+ for j=1:10
+     for i=1:4
+       count = count + 1;
+       specis{count} =name{j};
+     end
+ end
+
+ for i=1:10
+  c=int2str(i);
+  eval(['z',c,'=pc(',c,');'])
+ end
+ zscore=[z1;z2;z3;z4;z5;z6;z7;z8;z9;z10];
+
+
+% PC for 'A'
+a=[z1(1,:);z2(1,:);z3(1,:);z4(1,:);z5(1,:);z6(1,:);z7(1,:);z8(1,:);z9(1,:);z10(1,:)];
+figure
+gscatter(a(:,1),a(:,2),name')
+xlabel('PC1');
+ylabel('PC2');
+title('Principal Component Scatter Plot with Colored Clusters');
+
+% PC for 'C'
+c=[z1(2,:);z2(2,:);z3(2,:);z4(2,:);z5(2,:);z6(2,:);z7(2,:);z8(2,:);z9(2,:);z10(2,:)];
+figure
+gscatter(c(:,1),c(:,2),name')
+xlabel('PC1');
+ylabel('PC2');
+title('Principal Component Scatter Plot with Colored Clusters');
+
+% PC Value for 'G'
+g=[z1(3,:);z2(3,:);z3(3,:);z4(3,:);z5(3,:);z6(3,:);z7(3,:);z8(3,:);z9(3,:);z10(3,:)];
+figure
+gscatter(g(:,1),g(:,2),name')
+xlabel('PC1');
+ylabel('PC2');
+title('Principal Component Scatter Plot with Colored Clusters');
+
+% PC for 'T'
+t=[z1(4,:);z2(4,:);z3(4,:);z4(4,:);z5(4,:);z6(4,:);z7(4,:);z8(4,:);z9(4,:);z10(4,:)];
+figure
+gscatter(t(:,1),t(:,2),name')
+xlabel('PC1');
+ylabel('PC2');
+title('Principal Component Scatter Plot with Colored Clusters');
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Function to determine 2-gram neucleotide density.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [totdensity] = nmerdensity(Sequence, Window, nbin)
+
+%"ntuple" finds density of n-tuple neucleotide
+%'sequence' is genetic sequence, 'window' is counting window, nbin = No of letters in bin
+
+  labelcount = 0;
+  n=4^nbin;
+  labels = cell(1,n);
+
+  for first = 1:4
+      for second = 1:4
+         codon = int2nt([first second]);
+         labelcount = labelcount + 1;
+        labels{labelcount} = codon;
+      end
+  end
+
+  for k=1:n
+  char=labels{1,k};
+  nmer=ntuple(Sequence, Window, nbin, char);
+  totdensity(k,:)=nmer;
+  end
+end
+
